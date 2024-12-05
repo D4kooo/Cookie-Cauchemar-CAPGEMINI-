@@ -53,6 +53,11 @@ body {
     transition: all 0.3s ease; /* Animation douce */
 }
 
+#buyScroll {
+    position: relative;
+    z-index: 1000;
+}
+
 button {
     padding: 10px 20px;
     margin: 5px;
@@ -96,9 +101,6 @@ button:hover {
 
 .popup {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     background: #2a2a2a;
     padding: 20px;
     border-radius: 10px;
@@ -113,4 +115,53 @@ button:hover {
 .popup button {
     margin: 10px;
     padding: 5px 15px;
+}
+
+.wheel-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    text-align: center;
+}
+
+#wheel {
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+#spinWheel {
+    background-color: #8B0000;
+}
+
+#spinWheel:hover {
+    background-color: #A52A2A;
+}
+
+#buyWheel {
+    background-color: #8B0000;
+}
+
+#buyWheel:hover {
+    background-color: #A52A2A;
+}
+
+.reward-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 24px;
+    z-index: 10001;
+    animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
 }
