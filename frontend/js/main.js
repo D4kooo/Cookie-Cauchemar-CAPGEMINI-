@@ -10,8 +10,27 @@ const multiplierPriceElement = document.getElementById('multiplierPrice');
 const buyMultiplierButton = document.getElementById('buyMultiplier');
 
 cookieElement.addEventListener('click', () => {
-    cookies += multiplier;
-    updateDisplay();
+    if (Math.random() < 0.5) {  // Changé de 0.1 à 0.5 pour 50% de chance
+        const popup = document.getElementById('customPopup');
+        const overlay = document.getElementById('overlay');
+        popup.style.display = 'block';
+        overlay.style.display = 'block';
+        
+        document.getElementById('popupYes').onclick = () => {
+            cookies += multiplier;
+            updateDisplay();
+            popup.style.display = 'none';
+            overlay.style.display = 'none';
+        };
+        
+        document.getElementById('popupNo').onclick = () => {
+            popup.style.display = 'none';
+            overlay.style.display = 'none';
+        };
+    } else {
+        cookies += multiplier;
+        updateDisplay();
+    }
 });
 
 cookieElement.addEventListener("wheel", () => {

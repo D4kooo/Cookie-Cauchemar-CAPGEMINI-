@@ -83,3 +83,34 @@ button:hover {
     mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 50px, black 150px);
     -webkit-mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 50px, black 150px);
 }
+
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 10000;
+    border: 2px solid #4CAF50;
+}
+
+.popup-content {
+    text-align: center;
+}
+
+.popup button {
+    margin: 10px;
+    padding: 5px 15px;
+}
