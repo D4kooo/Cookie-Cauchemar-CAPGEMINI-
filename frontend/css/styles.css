@@ -49,6 +49,8 @@ body {
 
 .shop {
     margin-top: 20px;
+    position: absolute; /* Changé de static à absolute */
+    transition: all 0.3s ease; /* Animation douce */
 }
 
 button {
@@ -68,4 +70,16 @@ button:hover {
 #score, #multiplier {
     font-size: 24px;
     margin: 10px 0;
+}
+
+#flashlight {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: black;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: multiply;
+    mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 50px, black 150px);
+    -webkit-mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 50px, black 150px);
 }
