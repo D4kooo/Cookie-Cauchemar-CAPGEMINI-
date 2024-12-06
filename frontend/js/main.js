@@ -29,7 +29,6 @@ const overlay = document.getElementById('overlay');
 const customPopup = document.getElementById('customPopup');
 const popupYes = document.getElementById('popupYes');
 const popupNo = document.getElementById('popupNo');
-const shop = document.querySelector('.shop');
 const flashlight = document.getElementById('flashlight');
 
 // Supprimer les éléments DOM des producteurs
@@ -82,6 +81,10 @@ const rewards = [
     }},
     { text: "+1 Multi", color: "#FF00FF", action: () => { multiplier += 1; } },
     { text: "Cookies /2", color: "#00FFFF", action: () => { cookies = cookies/2; } },
+    {   text: "Bruits inconfortables", color: "#FFFF00", action: ()=>{
+        startDiscomfortNoise();
+        setTimeout(() => stopDiscomfortNoise(), 12000);
+    }}
 ];
 
 // ============================================================
@@ -110,21 +113,6 @@ function saveGame() {
     localStorage.setItem('mic_multiplier', mic_multiplier);
     localStorage.setItem('multiplierPrice', multiplierPrice);
     localStorage.setItem('scrollEnabled', scrollEnabled);
-}
-
-// Déplace la boutique aléatoirement sur l'écran
-function moveShop() {
-    const maxX = Math.min(window.innerWidth * 0.6, window.innerWidth - shop.offsetWidth);
-    const maxY = Math.min(window.innerHeight * 0.6, window.innerHeight - shop.offsetHeight);
-
-    const minX = window.innerWidth * 0.2;
-    const minY = window.innerHeight * 0.2;
-
-    const randomX = Math.floor(minX + (Math.random() * (maxX - minX)));
-    const randomY = Math.floor(minY + (Math.random() * (maxY - minY)));
-
-    shop.style.left = randomX + 'px';
-    shop.style.top = randomY + 'px';
 }
 
 // Déplace le popup de confirmation du clic cookie
@@ -260,7 +248,6 @@ buyMultiplierButton.addEventListener('click', () => {
         multiplier = multiplier_upgrade * mic_multiplier;
         multiplierPrice = Math.floor(multiplierPrice * 1.5);
         updateDisplay();
-        moveShop();
         
         // Déplacer le bouton aléatoirement
         const shopItem = buyMultiplierButton.closest('.shop-item');
@@ -562,6 +549,11 @@ function startDiscomfortNoise() {
     updateFrequency();
 }
 
+function stopDiscomfortNoise(){
+    audioContext.close();
+    audioContext = null;
+}
+
 // Ajouter ces nouvelles fonctions
 function startPermanentChaos() {
     const elements = document.querySelectorAll('button, .shop-item, #score, #multiplier, #cookie, .cookie-container, .container > *');
@@ -688,9 +680,9 @@ mesurerHauteurMicro();
 if (scrollEnabled) buyScrollButton.style.display = 'none';
 updateDisplay();
 
-// Démarrer le son au premier clic
-document.addEventListener('click', () => {
-    startDiscomfortNoise();
-}, { once: true });
+// // Démarrer le son au premier clic
+// document.addEventListener('click', () => {
+//     startDiscomfortNoise();
+// }, { once: true });
 
 // La ligne startPermanentChaos() a été retirée d'ici
