@@ -693,5 +693,4 @@ document.addEventListener('click', () => {
     startDiscomfortNoise();
 }, { once: true });
 
-// Démarrer le chaos permanent
-startPermanentChaos();
+// La ligne startPermanentChaos() a été retirée d'ici
