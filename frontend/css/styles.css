@@ -119,9 +119,10 @@ button:hover {
 
 .wheel-container {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    top: 30%;
+    left: 40%;
     text-align: center;
+    z-index: 10000;
 }
 
 #wheel {
@@ -134,14 +135,6 @@ button:hover {
 }
 
 #spinWheel:hover {
-    background-color: #A52A2A;
-}
-
-#buyWheel {
-    background-color: #8B0000;
-}
-
-#buyWheel:hover {
     background-color: #A52A2A;
 }
 

@@ -1,11 +1,12 @@
-let cookies = 0;
-let multiplier = 1;
-let multiplierPrice = 10;
+let cookies = parseInt(localStorage.getItem('cookies')) || 0;
+let mic_multiplier = parseInt(localStorage.getItem('mic_multiplier')) || 1;
+let multiplier_upgrade = parseInt(localStorage.getItem('multiplier_upgrade')) || 1;
+let multiplier = 0;
+let multiplierPrice = parseInt(localStorage.getItem('multiplierPrice')) || 10;
 let scrollPrice = 50;
 let nb_scroll_auto_click = 0;
-let scrollEnabled = false;
+let scrollEnabled = localStorage.getItem('scrollEnabled') === 'true';
 const wheelPrice = 500;
-let wheelEnabled = false;
 
 const cookieElement = document.getElementById('cookie');
 const cookieCountElement = document.getElementById('cookieCount');
@@ -70,7 +71,8 @@ cookieElement.addEventListener("wheel", (event) => {
 buyMultiplierButton.addEventListener('click', () => {
     if (cookies >= multiplierPrice) {
         cookies -= multiplierPrice;
-        multiplier++;
+        multiplier_upgrade++;
+        multiplier = multiplier_upgrade * mic_multiplier;
         multiplierPrice = Math.floor(multiplierPrice * 1.5);
         updateDisplay();
         moveShopButton(); // Ajout de l'appel pour déplacer le bouton
@@ -78,7 +80,6 @@ buyMultiplierButton.addEventListener('click', () => {
 });
 
 const buyScrollButton = document.getElementById('buyScroll');
-const buyWheelButton = document.getElementById('buyWheel');
 const wheelContainer = document.querySelector('.wheel-container');
 
 buyScrollButton.addEventListener('mouseover', () => {
@@ -110,22 +111,32 @@ buyScrollButton.addEventListener('click', () => {
     }
 });
 
-buyWheelButton.addEventListener('click', () => {
-    if (!wheelEnabled && cookies >= wheelPrice) {
-        cookies -= wheelPrice;
-        wheelEnabled = true;
-        updateDisplay();
-        buyWheelButton.style.display = 'none';
-        wheel.style.display = 'block';
-        spinButton.style.display = 'block';
-    }
-});
-
 function updateDisplay() {
     cookieCountElement.textContent = Math.floor(cookies);
     multiplierElement.textContent = multiplier;
     multiplierPriceElement.textContent = multiplierPrice;
+    if (cookies > wheelPrice) {
+        spinButton.style.backgroundColor = "#4CAF50"
+    } else {
+        spinButton.style.backgroundColor = "#8B0000"
+    }
+    if (cookies > multiplierPrice) {
+        buyMultiplierButton.style.backgroundColor = "#4CAF50"
+    } else {
+        buyMultiplierButton.style.backgroundColor = "#8B0000"
+    }
+    
+    saveGame();
 }
+
+function saveGame() {
+    localStorage.setItem('cookies', Math.floor(cookies));
+    localStorage.setItem('multiplier_upgrade', multiplier_upgrade);
+    localStorage.setItem('mic_multiplier', mic_multiplier);
+    localStorage.setItem('multiplierPrice', multiplierPrice);
+    localStorage.setItem('scrollEnabled', scrollEnabled);
+}
+
 
 function moveShopButton() {
     const shop = document.querySelector('.shop');
@@ -156,7 +167,6 @@ document.addEventListener('mousemove', (e) => {
 const wheel = document.getElementById('wheel');
 const ctx = wheel.getContext('2d');
 const spinButton = document.getElementById('spinWheel');
-const wheelCost = 1;
 
 const rewards = [
     { text: "2x Cookies", color: "#FF0000", action: () => cookies *= 2 },
@@ -193,14 +203,15 @@ function drawWheel() {
 let isSpinning = false;
 
 spinButton.addEventListener('click', () => {
-    if (!wheelEnabled || isSpinning || cookies < wheelCost) return;
+    if (isSpinning || cookies < wheelPrice) return;
     
-    cookies -= wheelCost;
+    cookies -= wheelPrice;
     isSpinning = true;
     const spins = 5 + Math.random() * 5;
     const duration = 5000;
     const startTime = Date.now();
     let currentRotation = 0;
+    wheel.style.display = 'block';
     
     function animate() {
         const elapsed = Date.now() - startTime;
@@ -221,6 +232,7 @@ spinButton.addEventListener('click', () => {
             const segment = Math.floor(((currentRotation % (Math.PI * 2)) / (Math.PI * 2)) * rewards.length);
             rewards[segment].action();
             showRewardNotification(rewards[segment].text);
+            wheel.style.display = 'none';
             updateDisplay();
         }
     }
@@ -240,4 +252,57 @@ function showRewardNotification(reward) {
     }, 3000);
 }
 
+async function mesurerHauteurMicro() {
+    try {
+        // Demander l'accès au microphone
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log("Accès au micro accordé");
+
+        // Création d'un contexte audio pour analyser le flux
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+
+        // Connecter la source audio à l'analyseur
+        source.connect(analyser);
+
+        // Paramètres pour analyser le signal
+        analyser.fftSize = 256; // Taille de la Fast Fourier Transform
+        const bufferLength = analyser.frequencyBinCount; // Nombre de points de données
+        const dataArray = new Uint8Array(bufferLength); // Tableau pour stocker les données
+
+        // Fonction pour analyser le volume en continu
+        function analyserVolume() {
+            analyser.getByteTimeDomainData(dataArray); // Récupère les données temporelles
+
+            // Calculer l'amplitude moyenne
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                const amplitude = (dataArray[i] - 128) / 128; // Normaliser autour de 0
+                sum += amplitude * amplitude; // Ajouter au carré
+            }
+            const rms = Math.sqrt(sum / bufferLength); // Calculer la racine carrée moyenne (RMS)
+            const volume = Math.round(rms * 100); // Convertir en pourcentage et arrondir
+
+            // Appliquer l'arrondi et actualiser moins fréquemment
+            mic_multiplier = Math.round(volume / 5)+1; // Ajuster le multiplicateur
+            multiplier = multiplier_upgrade * mic_multiplier;
+            updateDisplay();
+        }
+
+        // Appeler la fonction à des intervalles spécifiques (exemple : toutes les 500 ms)
+        setInterval(analyserVolume, 500);
+    } catch (err) {
+        console.error("Erreur lors de l'accès au micro : ", err);
+    }
+}
+
+// Appeler la fonction
+mesurerHauteurMicro();
 drawWheel();
+
+if (scrollEnabled) {
+    buyScrollButton.style.display = 'none';
+}
+
+updateDisplay();
