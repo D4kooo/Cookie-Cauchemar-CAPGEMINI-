@@ -12,15 +12,7 @@ let nb_scroll_auto_click = 0;
 const scrollPrice = 50;
 const wheelPrice = 500;
 
-// Producteurs
-let ovens = parseInt(localStorage.getItem('ovens')) || 0;
-let factories = parseInt(localStorage.getItem('factories')) || 0;
-let cities = parseInt(localStorage.getItem('cities')) || 0;
-
-// Prix des producteurs
-let ovenPrice = 50;
-let factoryPrice = 200;
-let cityPrice = 1000;
+// Supprimer toutes les variables des producteurs
 
 // Eléments DOM
 const cookieElement = document.getElementById('cookie');
@@ -40,23 +32,27 @@ const popupNo = document.getElementById('popupNo');
 const shop = document.querySelector('.shop');
 const flashlight = document.getElementById('flashlight');
 
-// Elements DOM pour les producteurs
-const buyOvenButton = document.getElementById('buyOven');
-const buyFactoryButton = document.getElementById('buyFactory');
-const buyCityButton = document.getElementById('buyCity');
-const ovenCountElement = document.getElementById('ovenCount');
-const factoryCountElement = document.getElementById('factoryCount');
-const cityCountElement = document.getElementById('cityCount');
-const ovenPriceElement = document.getElementById('ovenPrice');
-const factoryPriceElement = document.getElementById('factoryPrice');
-const cityPriceElement = document.getElementById('cityPrice');
+// Supprimer les éléments DOM des producteurs
+
+// Ajouter variable globale pour suivre l'état d'inversion
+let isMouseInverted = false;
+
+// Ajouter après les variables globales
+let isInterfaceChaos = false;
+let chaosInterval;
 
 // Récompenses de la roue
 const rewards = [
     { text: "2x Cookies", color: "#FF0000", action: () => { cookies *= 2; } },
     { text: "+5 Multi", color: "#00FF00", action: () => { multiplier += 5; } },
-    { text: "Perdu!", color: "#0000FF", action: () => {} },
-    { text: "+100 Cookies", color: "#FFFF00", action: () => { cookies += 100; } },
+    { text: "Axes inversés!", color: "#0000FF", action: () => { 
+        isMouseInverted = !isMouseInverted; 
+        setTimeout(() => { isMouseInverted = false; }, 10000); // Durée de 10 secondes
+    }},
+    { text: "Chaos UI!", color: "#FF00FF", action: () => {
+        startInterfaceChaos();
+        setTimeout(() => stopInterfaceChaos(), 15000); // Dure 15 secondes
+    }},
     { text: "+1 Multi", color: "#FF00FF", action: () => { multiplier += 1; } },
     { text: "-50 Cookies", color: "#00FFFF", action: () => { cookies = Math.max(0, cookies - 50); } },
 ];
@@ -76,17 +72,6 @@ function updateDisplay() {
     // Couleur du bouton multiplicateur selon le score
     buyMultiplierButton.style.backgroundColor = (cookies > multiplierPrice) ? "#4CAF50" : "#8B0000";
 
-    ovenCountElement.textContent = ovens;
-    factoryCountElement.textContent = factories;
-    cityCountElement.textContent = cities;
-    ovenPriceElement.textContent = ovenPrice;
-    factoryPriceElement.textContent = factoryPrice;
-    cityPriceElement.textContent = cityPrice;
-    
-    buyOvenButton.style.backgroundColor = (cookies >= ovenPrice) ? "#4CAF50" : "#8B0000";
-    buyFactoryButton.style.backgroundColor = (cookies >= factoryPrice) ? "#4CAF50" : "#8B0000";
-    buyCityButton.style.backgroundColor = (cookies >= cityPrice) ? "#4CAF50" : "#8B0000";
-
     saveGame();
 }
 
@@ -97,9 +82,6 @@ function saveGame() {
     localStorage.setItem('mic_multiplier', mic_multiplier);
     localStorage.setItem('multiplierPrice', multiplierPrice);
     localStorage.setItem('scrollEnabled', scrollEnabled);
-    localStorage.setItem('ovens', ovens);
-    localStorage.setItem('factories', factories);
-    localStorage.setItem('cities', cities);
 }
 
 // Déplace la boutique aléatoirement sur l'écran
@@ -417,50 +399,60 @@ spinButton.addEventListener('click', () => {
 
 // Suivi de la souris pour l'effet lampe de poche
 document.addEventListener('mousemove', (e) => {
-    const x = (e.clientX / window.innerWidth) * 100;
-    const y = (e.clientY / window.innerHeight) * 100;
+    let x, y;
+    if (isMouseInverted) {
+        x = 100 - ((e.clientX / window.innerWidth) * 100);
+        y = 100 - ((e.clientY / window.innerHeight) * 100);
+    } else {
+        x = (e.clientX / window.innerWidth) * 100;
+        y = (e.clientY / window.innerHeight) * 100;
+    }
     flashlight.style.setProperty('--x', x + '%');
     flashlight.style.setProperty('--y', y + '%');
 });
 
-// Production automatique
-setInterval(() => {
-    cookies += ovens * 1; // 1 cookie/s par four
-    cookies += factories * 10; // 10 cookies/s par usine
-    cookies += cities * 100; // 100 cookies/s par ville
-    updateDisplay();
-}, 1000);
+// Supprimer la production automatique et les événements d'achat des producteurs
 
-// Événements d'achat des producteurs
-buyOvenButton.addEventListener('click', () => {
-    if (cookies >= ovenPrice) {
-        cookies -= ovenPrice;
-        ovens++;
-        ovenPrice = Math.floor(ovenPrice * 1.5);
-        updateDisplay();
-        moveShop();
-    }
-});
+// Ajouter ces nouvelles fonctions
+function startInterfaceChaos() {
+    isInterfaceChaos = true;
+    const elements = document.querySelectorAll('button, .shop-item, #score, #multiplier');
+    
+    chaosInterval = setInterval(() => {
+        elements.forEach(el => {
+            // Random transforms
+            const rotate = Math.random() * 20 - 10; // -10 to 10 degrees
+            const translateX = Math.random() * 40 - 20; // -20 to 20px
+            const translateY = Math.random() * 40 - 20; // -20 to 20px
+            const scale = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
+            
+            el.style.transform = `rotate(${rotate}deg) translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            
+            // Random opacity
+            if (Math.random() < 0.3) {
+                el.style.opacity = 0.3 + Math.random() * 0.7;
+            }
+            
+            // Random color changes
+            if (Math.random() < 0.2) {
+                el.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
+            }
+        });
+    }, 500);
+}
 
-buyFactoryButton.addEventListener('click', () => {
-    if (cookies >= factoryPrice) {
-        cookies -= factoryPrice;
-        factories++;
-        factoryPrice = Math.floor(factoryPrice * 1.5);
-        updateDisplay();
-        moveShop();
-    }
-});
-
-buyCityButton.addEventListener('click', () => {
-    if (cookies >= cityPrice) {
-        cookies -= cityPrice;
-        cities++;
-        cityPrice = Math.floor(cityPrice * 1.5);
-        updateDisplay();
-        moveShop();
-    }
-});
+function stopInterfaceChaos() {
+    isInterfaceChaos = false;
+    clearInterval(chaosInterval);
+    
+    // Reset all elements
+    const elements = document.querySelectorAll('button, .shop-item, #score, #multiplier');
+    elements.forEach(el => {
+        el.style.transform = '';
+        el.style.opacity = '';
+        el.style.filter = '';
+    });
+}
 
 // ============================================================
 // Initialisation

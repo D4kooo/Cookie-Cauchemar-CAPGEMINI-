@@ -73,15 +73,13 @@ button {
     border: none;
     color: white;
     border-radius: 5px;
-}
-
-button:hover {
-    background-color: #45a049;
+    transition: all 0.3s ease;
 }
 
 #score, #multiplier {
     font-size: 24px;
     margin: 10px 0;
+    transition: all 0.3s ease;
 }
 
 /* Effet lampe de poche */
@@ -170,6 +168,19 @@ button:hover {
     100% { opacity: 0; }
 }
 
+/* Supprimer toutes les classes liées aux producteurs */
+/* ...existing code... */
+
+.producers,
+.producer,
+.producer-icon,
+.producer-info,
+.button-icon {
+    display: none;
+}
+
+/* ...existing code... */
+
 .producers {
     position: fixed;
     width: 100vw;
@@ -215,8 +226,12 @@ button:hover {
 }
 
 .producer button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     margin: 5px 0;
+    padding: 8px 15px;
 }
 
 .producer span {
@@ -225,12 +240,35 @@ button:hover {
     color: #fff;
 }
 
+.producer-icon {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.producer-icon img {
+    width: 64px;
+    height: 64px;
+    transition: transform 0.3s ease;
+}
+
+.producer:hover .producer-icon img {
+    transform: scale(1.1);
+}
+
+.button-icon {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
 .shop-item {
     position: relative; /* Change to fixed when moved */
     background: rgba(0, 0, 0, 0.7);
     padding: 10px;
     border-radius: 10px;
     border: 2px solid #4CAF50;
+    transition: all 0.3s ease;
 }
 
 .multiplier-shop, .scroll-shop {
