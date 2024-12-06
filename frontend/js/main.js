@@ -81,7 +81,7 @@ const rewards = [
         setTimeout(() => { isMouseInverted = false; }, 10000); // Durée de 10 secondes
     }},
     { text: "+1 Multi", color: "#FF00FF", action: () => { multiplier += 1; } },
-    { text: "-50 Cookies", color: "#00FFFF", action: () => { cookies = Math.max(0, cookies - 50); } },
+    { text: "Cookies /2", color: "#00FFFF", action: () => { cookies = cookies/2; } },
 ];
 
 // ============================================================
@@ -197,7 +197,7 @@ async function mesurerHauteurMicro() {
             }
             const rms = Math.sqrt(sum / bufferLength);
             const volume = Math.round(rms * 100);
-            mic_multiplier = Math.round(volume / 5) + 1;
+            mic_multiplier = Math.round(volume / 5);
             multiplier = multiplier_upgrade * mic_multiplier;
             updateDisplay();
         }
