@@ -1,194 +1,159 @@
+// ============================================================
+// Variables globales et état du jeu
+// ============================================================
 let cookies = parseInt(localStorage.getItem('cookies')) || 0;
 let mic_multiplier = parseInt(localStorage.getItem('mic_multiplier')) || 1;
 let multiplier_upgrade = parseInt(localStorage.getItem('multiplier_upgrade')) || 1;
-let multiplier = 0;
+let multiplier = multiplier_upgrade * mic_multiplier;
 let multiplierPrice = parseInt(localStorage.getItem('multiplierPrice')) || 10;
-let scrollPrice = 50;
-let nb_scroll_auto_click = 0;
 let scrollEnabled = localStorage.getItem('scrollEnabled') === 'true';
+let nb_scroll_auto_click = 0;
+
+const scrollPrice = 50;
 const wheelPrice = 500;
 
+// Producteurs
+let ovens = parseInt(localStorage.getItem('ovens')) || 0;
+let factories = parseInt(localStorage.getItem('factories')) || 0;
+let cities = parseInt(localStorage.getItem('cities')) || 0;
+
+// Prix des producteurs
+let ovenPrice = 50;
+let factoryPrice = 200;
+let cityPrice = 1000;
+
+// Eléments DOM
 const cookieElement = document.getElementById('cookie');
 const cookieCountElement = document.getElementById('cookieCount');
 const multiplierElement = document.getElementById('multiplierValue');
 const multiplierPriceElement = document.getElementById('multiplierPrice');
 const buyMultiplierButton = document.getElementById('buyMultiplier');
-
-function movePopup() {
-    const popup = document.getElementById('customPopup');
-    const maxX = Math.min(window.innerWidth * 0.6, window.innerWidth - popup.offsetWidth);
-    const maxY = Math.min(window.innerHeight * 0.6, window.innerHeight - popup.offsetHeight);
-    
-    const minX = window.innerWidth * 0.2;
-    const minY = window.innerHeight * 0.2;
-    
-    const randomX = Math.floor(minX + (Math.random() * (maxX - minX)));
-    const randomY = Math.floor(minY + (Math.random() * (maxY - minY)));
-    
-    popup.style.left = randomX + 'px';
-    popup.style.top = randomY + 'px';
-    popup.style.transform = 'none'; // Supprimer le transform initial
-}
-
-cookieElement.addEventListener('click', () => {
-    if (Math.random() < 0.5) {  // Changé de 0.1 à 0.5 pour 50% de chance
-        const popup = document.getElementById('customPopup');
-        const overlay = document.getElementById('overlay');
-        popup.style.display = 'block';
-        overlay.style.display = 'block';
-        movePopup(); // Positionner le popup aléatoirement
-        
-        document.getElementById('popupYes').onclick = () => {
-            cookies += multiplier;
-            updateDisplay();
-            popup.style.display = 'none';
-            overlay.style.display = 'none';
-        };
-        
-        document.getElementById('popupNo').onclick = () => {
-            popup.style.display = 'none';
-            overlay.style.display = 'none';
-        };
-    } else {
-        cookies += multiplier;
-        updateDisplay();
-    }
-});
-
-cookieElement.addEventListener("wheel", (event) => {
-    if (!scrollEnabled) return;
-    
-    if (nb_scroll_auto_click >= 3) {
-        event.preventDefault();
-        cookies += multiplier;
-        nb_scroll_auto_click = 0;
-        updateDisplay();
-    } else {
-        nb_scroll_auto_click += 1;
-    }
-});
-
-buyMultiplierButton.addEventListener('click', () => {
-    if (cookies >= multiplierPrice) {
-        cookies -= multiplierPrice;
-        multiplier_upgrade++;
-        multiplier = multiplier_upgrade * mic_multiplier;
-        multiplierPrice = Math.floor(multiplierPrice * 1.5);
-        updateDisplay();
-        moveShopButton(); // Ajout de l'appel pour déplacer le bouton
-    }
-});
-
 const buyScrollButton = document.getElementById('buyScroll');
-const wheelContainer = document.querySelector('.wheel-container');
+const spinButton = document.getElementById('spinWheel');
+const wheel = document.getElementById('wheel');
+const ctx = wheel.getContext('2d');
 
-buyScrollButton.addEventListener('mouseover', () => {
-    // 70% de chance que le bouton fuie
-    if (!scrollEnabled && Math.random() < 0.7) {
-        const maxX = window.innerWidth - buyScrollButton.offsetWidth;
-        const maxY = window.innerHeight - buyScrollButton.offsetHeight;
-        
-        const randomX = Math.floor(Math.random() * maxX);
-        const randomY = Math.floor(Math.random() * maxY);
-        
-        buyScrollButton.style.position = 'fixed';
-        buyScrollButton.style.left = randomX + 'px';
-        buyScrollButton.style.top = randomY + 'px';
-        buyScrollButton.style.transition = 'none'; // Désactive l'animation pour un déplacement instantané
-    }
-});
+const overlay = document.getElementById('overlay');
+const customPopup = document.getElementById('customPopup');
+const popupYes = document.getElementById('popupYes');
+const popupNo = document.getElementById('popupNo');
+const shop = document.querySelector('.shop');
+const flashlight = document.getElementById('flashlight');
 
-buyScrollButton.addEventListener('click', () => {
-    if (cookies >= scrollPrice && !scrollEnabled) {
-        cookies -= scrollPrice;
-        scrollEnabled = true;
-        updateDisplay();
-        buyScrollButton.style.display = 'none';
-        // Réinitialiser la position du bouton
-        buyScrollButton.style.position = '';
-        buyScrollButton.style.left = '';
-        buyScrollButton.style.top = '';
-    }
-});
+// Elements DOM pour les producteurs
+const buyOvenButton = document.getElementById('buyOven');
+const buyFactoryButton = document.getElementById('buyFactory');
+const buyCityButton = document.getElementById('buyCity');
+const ovenCountElement = document.getElementById('ovenCount');
+const factoryCountElement = document.getElementById('factoryCount');
+const cityCountElement = document.getElementById('cityCount');
+const ovenPriceElement = document.getElementById('ovenPrice');
+const factoryPriceElement = document.getElementById('factoryPrice');
+const cityPriceElement = document.getElementById('cityPrice');
 
+// Récompenses de la roue
+const rewards = [
+    { text: "2x Cookies", color: "#FF0000", action: () => { cookies *= 2; } },
+    { text: "+5 Multi", color: "#00FF00", action: () => { multiplier += 5; } },
+    { text: "Perdu!", color: "#0000FF", action: () => {} },
+    { text: "+100 Cookies", color: "#FFFF00", action: () => { cookies += 100; } },
+    { text: "+1 Multi", color: "#FF00FF", action: () => { multiplier += 1; } },
+    { text: "-50 Cookies", color: "#00FFFF", action: () => { cookies = Math.max(0, cookies - 50); } },
+];
+
+// ============================================================
+// Fonctions utilitaires
+// ============================================================
+
+// Met à jour l'affichage du score, multipliateurs, etc.
 function updateDisplay() {
     cookieCountElement.textContent = Math.floor(cookies);
     multiplierElement.textContent = multiplier;
     multiplierPriceElement.textContent = multiplierPrice;
-    if (cookies > wheelPrice) {
-        spinButton.style.backgroundColor = "#4CAF50"
-    } else {
-        spinButton.style.backgroundColor = "#8B0000"
-    }
-    if (cookies > multiplierPrice) {
-        buyMultiplierButton.style.backgroundColor = "#4CAF50"
-    } else {
-        buyMultiplierButton.style.backgroundColor = "#8B0000"
-    }
+
+    // Couleur du bouton spin selon le score
+    spinButton.style.backgroundColor = (cookies > wheelPrice) ? "#4CAF50" : "#8B0000";
+    // Couleur du bouton multiplicateur selon le score
+    buyMultiplierButton.style.backgroundColor = (cookies > multiplierPrice) ? "#4CAF50" : "#8B0000";
+
+    ovenCountElement.textContent = ovens;
+    factoryCountElement.textContent = factories;
+    cityCountElement.textContent = cities;
+    ovenPriceElement.textContent = ovenPrice;
+    factoryPriceElement.textContent = factoryPrice;
+    cityPriceElement.textContent = cityPrice;
     
+    buyOvenButton.style.backgroundColor = (cookies >= ovenPrice) ? "#4CAF50" : "#8B0000";
+    buyFactoryButton.style.backgroundColor = (cookies >= factoryPrice) ? "#4CAF50" : "#8B0000";
+    buyCityButton.style.backgroundColor = (cookies >= cityPrice) ? "#4CAF50" : "#8B0000";
+
     saveGame();
 }
 
+// Sauvegarde dans localStorage
 function saveGame() {
     localStorage.setItem('cookies', Math.floor(cookies));
     localStorage.setItem('multiplier_upgrade', multiplier_upgrade);
     localStorage.setItem('mic_multiplier', mic_multiplier);
     localStorage.setItem('multiplierPrice', multiplierPrice);
     localStorage.setItem('scrollEnabled', scrollEnabled);
+    localStorage.setItem('ovens', ovens);
+    localStorage.setItem('factories', factories);
+    localStorage.setItem('cities', cities);
 }
 
-
-function moveShopButton() {
-    const shop = document.querySelector('.shop');
-    // Limiter à 60% de la largeur et hauteur de l'écran
+// Déplace la boutique aléatoirement sur l'écran
+function moveShop() {
     const maxX = Math.min(window.innerWidth * 0.6, window.innerWidth - shop.offsetWidth);
     const maxY = Math.min(window.innerHeight * 0.6, window.innerHeight - shop.offsetHeight);
-    
-    // Ajouter un décalage de 20% depuis les bords
+
     const minX = window.innerWidth * 0.2;
     const minY = window.innerHeight * 0.2;
-    
+
     const randomX = Math.floor(minX + (Math.random() * (maxX - minX)));
     const randomY = Math.floor(minY + (Math.random() * (maxY - minY)));
-    
+
     shop.style.left = randomX + 'px';
     shop.style.top = randomY + 'px';
 }
 
-const flashlight = document.getElementById('flashlight');
+// Déplace le popup de confirmation du clic cookie
+function movePopupRandom() {
+    const maxX = Math.min(window.innerWidth * 0.6, window.innerWidth - customPopup.offsetWidth);
+    const maxY = Math.min(window.innerHeight * 0.6, window.innerHeight - customPopup.offsetHeight);
 
-document.addEventListener('mousemove', (e) => {
-    const x = (e.clientX / window.innerWidth) * 100;
-    const y = (e.clientY / window.innerHeight) * 100;
-    flashlight.style.setProperty('--x', x + '%');
-    flashlight.style.setProperty('--y', y + '%');
-});
+    const minX = window.innerWidth * 0.2;
+    const minY = window.innerHeight * 0.2;
 
-const wheel = document.getElementById('wheel');
-const ctx = wheel.getContext('2d');
-const spinButton = document.getElementById('spinWheel');
+    const randomX = Math.floor(minX + (Math.random() * (maxX - minX)));
+    const randomY = Math.floor(minY + (Math.random() * (maxY - minY)));
 
-const rewards = [
-    { text: "2x Cookies", color: "#FF0000", action: () => cookies *= 2 },
-    { text: "+5 Multi", color: "#00FF00", action: () => multiplier += 5 },
-    { text: "Perdu!", color: "#0000FF", action: () => {} },
-    { text: "+100 Cookies", color: "#FFFF00", action: () => cookies += 100 },
-    { text: "+1 Multi", color: "#FF00FF", action: () => multiplier += 1 },
-    { text: "-50 Cookies", color: "#00FFFF", action: () => cookies = Math.max(0, cookies - 50) },
-];
+    customPopup.style.left = randomX + 'px';
+    customPopup.style.top = randomY + 'px';
+}
 
+// Affiche une notification de récompense
+function showRewardNotification(rewardText) {
+    const notification = document.createElement('div');
+    notification.className = 'reward-notification';
+    notification.textContent = `Vous avez gagné : ${rewardText}`;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// Dessine la roue
 function drawWheel() {
     const segments = rewards.length;
     const arc = Math.PI * 2 / segments;
-    
-    for(let i = 0; i < segments; i++) {
+
+    for (let i = 0; i < segments; i++) {
         ctx.beginPath();
         ctx.fillStyle = rewards[i].color;
         ctx.moveTo(150, 150);
         ctx.arc(150, 150, 140, i * arc, (i + 1) * arc);
         ctx.lineTo(150, 150);
         ctx.fill();
-        
+
         ctx.save();
         ctx.translate(150, 150);
         ctx.rotate(i * arc + arc / 2);
@@ -200,24 +165,234 @@ function drawWheel() {
     }
 }
 
-let isSpinning = false;
+// Analyse du volume micro pour ajuster le multiplicateur
+async function mesurerHauteurMicro() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
 
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        function analyserVolume() {
+            analyser.getByteTimeDomainData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                const amplitude = (dataArray[i] - 128) / 128;
+                sum += amplitude * amplitude;
+            }
+            const rms = Math.sqrt(sum / bufferLength);
+            const volume = Math.round(rms * 100);
+            mic_multiplier = Math.round(volume / 5) + 1;
+            multiplier = multiplier_upgrade * mic_multiplier;
+            updateDisplay();
+        }
+
+        setInterval(analyserVolume, 500);
+    } catch (err) {
+        console.error("Erreur lors de l'accès au micro : ", err);
+    }
+}
+
+// ============================================================
+// Evénements
+// ============================================================
+
+// Clic sur le cookie
+cookieElement.addEventListener('click', () => {
+    // 50% de chance d'afficher le popup
+    if (Math.random() < 0.5) {
+        customPopup.style.display = 'block';
+        overlay.style.display = 'block';
+        movePopupRandom();
+    } else {
+        cookies += multiplier;
+        updateDisplay();
+    }
+});
+
+// Réponse au popup
+popupYes.addEventListener('click', () => {
+    cookies += multiplier;
+    updateDisplay();
+    customPopup.style.display = 'none';
+    overlay.style.display = 'none';
+});
+
+popupNo.addEventListener('click', () => {
+    customPopup.style.display = 'none';
+    overlay.style.display = 'none';
+});
+
+// Scroll sur le cookie (si débloqué)
+cookieElement.addEventListener("wheel", (event) => {
+    if (!scrollEnabled) return;
+    // Au bout de 3 scrolls, un clic est simulé
+    if (nb_scroll_auto_click >= 3) {
+        event.preventDefault();
+        cookies += multiplier;
+        nb_scroll_auto_click = 0;
+        updateDisplay();
+    } else {
+        nb_scroll_auto_click++;
+    }
+});
+
+// Achat du multiplicateur
+buyMultiplierButton.addEventListener('click', () => {
+    if (cookies >= multiplierPrice) {
+        cookies -= multiplierPrice;
+        multiplier_upgrade++;
+        multiplier = multiplier_upgrade * mic_multiplier;
+        multiplierPrice = Math.floor(multiplierPrice * 1.5);
+        updateDisplay();
+        moveShop();
+        
+        // Déplacer le bouton aléatoirement
+        const shopItem = buyMultiplierButton.closest('.shop-item');
+        shopItem.style.position = 'fixed';
+        const maxX = window.innerWidth - shopItem.offsetWidth;
+        const maxY = window.innerHeight - shopItem.offsetHeight;
+        shopItem.style.left = Math.floor(Math.random() * maxX) + 'px';
+        shopItem.style.top = Math.floor(Math.random() * maxY) + 'px';
+    }
+});
+
+// Ajout du comportement fuyant pour le bouton de la roue avec probabilité
+spinButton.addEventListener('mouseover', () => {
+    if (Math.random() < 0.7) { // 70% de chance de fuir
+        const shopItem = spinButton.closest('.shop-item');
+        moveToSafePosition(shopItem);
+        
+        if (!moveInterval) {
+            moveInterval = setInterval(() => {
+                moveToSafePosition(shopItem);
+            }, 800);
+        }
+    }
+});
+
+// Fonction pour déplacer le bouton à une position sûre
+function moveToSafePosition(element) {
+    let newPos;
+    let attempts = 0;
+    const maxAttempts = 50;
+
+    do {
+        newPos = {
+            x: Math.floor(Math.random() * (window.innerWidth - element.offsetWidth)),
+            y: Math.floor(Math.random() * (window.innerHeight - element.offsetHeight))
+        };
+        attempts++;
+        // On continue tant qu'on est proche du cookie ET qu'on n'a pas dépassé le nombre max de tentatives
+    } while (isNearCookie(newPos.x + element.offsetWidth/2, newPos.y + element.offsetHeight/2) && attempts < maxAttempts);
+
+    // Si on n'a pas trouvé de position valide, on force une position éloignée
+    if (attempts >= maxAttempts) {
+        const cookie = document.getElementById('cookie');
+        const cookieRect = cookie.getBoundingClientRect();
+        newPos.x = cookieRect.left < window.innerWidth/2 ? 
+                   window.innerWidth - element.offsetWidth - 50 : 
+                   50;
+        newPos.y = cookieRect.top < window.innerHeight/2 ? 
+                   window.innerHeight - element.offsetHeight - 50 : 
+                   50;
+    }
+
+    element.style.transition = 'all 0.5s ease-out';
+    element.style.position = 'fixed';
+    element.style.left = newPos.x + 'px';
+    element.style.top = newPos.y + 'px';
+}
+
+// Modification de l'événement mouseenter pour ne pas démarrer automatiquement le mouvement
+spinButton.addEventListener('mouseenter', () => {
+    // Le mouvement continu est maintenant géré dans le mouseover
+});
+
+spinButton.addEventListener('mouseleave', () => {
+    clearInterval(moveInterval);
+    moveInterval = null;
+});
+
+// Fonction pour vérifier si une position est trop proche du cookie
+function isNearCookie(x, y) {
+    const cookie = document.getElementById('cookie');
+    const cookieRect = cookie.getBoundingClientRect();
+    const safeDistance = 200; // Augmenté pour plus de sécurité
+
+    const centerX = cookieRect.left + cookieRect.width / 2;
+    const centerY = cookieRect.top + cookieRect.height / 2;
+
+    const distance = Math.sqrt(
+        Math.pow(x - centerX, 2) + 
+        Math.pow(y - centerY, 2)
+    );
+
+    return distance < safeDistance;
+}
+
+// Fonction pour obtenir une position valide pour le bouton fuyant
+function getValidButtonPosition(buttonWidth, buttonHeight) {
+    let x, y;
+    do {
+        x = Math.floor(Math.random() * (window.innerWidth - buttonWidth));
+        y = Math.floor(Math.random() * (window.innerHeight - buttonHeight));
+    } while (isNearCookie(x, y));
+    return { x, y };
+}
+
+// Bouton scroll (fuite aléatoire)
+buyScrollButton.addEventListener('mouseover', () => {
+    if (!scrollEnabled && Math.random() < 0.7) {
+        const maxX = window.innerWidth - buyScrollButton.offsetWidth;
+        const maxY = window.innerHeight - buyScrollButton.offsetHeight;
+        buyScrollButton.style.position = 'fixed';
+        buyScrollButton.style.left = Math.floor(Math.random() * maxX) + 'px';
+        buyScrollButton.style.top = Math.floor(Math.random() * maxY) + 'px';
+        buyScrollButton.style.transition = 'none';
+    }
+});
+
+// Achat scroll
+buyScrollButton.addEventListener('click', () => {
+    if (cookies >= scrollPrice && !scrollEnabled) {
+        cookies -= scrollPrice;
+        scrollEnabled = true;
+        updateDisplay();
+        buyScrollButton.style.display = 'none';
+        // Restaure la position
+        buyScrollButton.style.position = '';
+        buyScrollButton.style.left = '';
+        buyScrollButton.style.top = '';
+    }
+});
+
+// Spin de la roue
+let isSpinning = false;
 spinButton.addEventListener('click', () => {
     if (isSpinning || cookies < wheelPrice) return;
-    
+
     cookies -= wheelPrice;
     isSpinning = true;
+    wheel.style.display = 'block';
+    overlay.style.display = 'block'; // Ajouter un overlay pendant l'animation
+    
     const spins = 5 + Math.random() * 5;
     const duration = 5000;
     const startTime = Date.now();
     let currentRotation = 0;
-    wheel.style.display = 'block';
-    
-    function animate() {
+
+    function animateWheel() {
         const elapsed = Date.now() - startTime;
         const progress = elapsed / duration;
-        
+
         if (progress < 1) {
+            // Courbe d’accélération/décélération
             currentRotation = (spins * Math.PI * 2) * (1 - Math.pow(1 - progress, 3));
             ctx.save();
             ctx.clearRect(0, 0, 300, 300);
@@ -226,83 +401,71 @@ spinButton.addEventListener('click', () => {
             ctx.translate(-150, -150);
             drawWheel();
             ctx.restore();
-            requestAnimationFrame(animate);
+            requestAnimationFrame(animateWheel);
         } else {
             isSpinning = false;
             const segment = Math.floor(((currentRotation % (Math.PI * 2)) / (Math.PI * 2)) * rewards.length);
             rewards[segment].action();
             showRewardNotification(rewards[segment].text);
             wheel.style.display = 'none';
+            overlay.style.display = 'none'; // Cacher l'overlay à la fin
             updateDisplay();
         }
     }
-    
-    animate();
+    animateWheel();
 });
 
-function showRewardNotification(reward) {
-    const notification = document.createElement('div');
-    notification.className = 'reward-notification';
-    notification.textContent = `Vous avez gagné : ${reward}`;
-    document.body.appendChild(notification);
-    
-    // Supprime la notification après 3 secondes
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
+// Suivi de la souris pour l'effet lampe de poche
+document.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth) * 100;
+    const y = (e.clientY / window.innerHeight) * 100;
+    flashlight.style.setProperty('--x', x + '%');
+    flashlight.style.setProperty('--y', y + '%');
+});
 
-async function mesurerHauteurMicro() {
-    try {
-        // Demander l'accès au microphone
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log("Accès au micro accordé");
+// Production automatique
+setInterval(() => {
+    cookies += ovens * 1; // 1 cookie/s par four
+    cookies += factories * 10; // 10 cookies/s par usine
+    cookies += cities * 100; // 100 cookies/s par ville
+    updateDisplay();
+}, 1000);
 
-        // Création d'un contexte audio pour analyser le flux
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const analyser = audioContext.createAnalyser();
-        const source = audioContext.createMediaStreamSource(stream);
-
-        // Connecter la source audio à l'analyseur
-        source.connect(analyser);
-
-        // Paramètres pour analyser le signal
-        analyser.fftSize = 256; // Taille de la Fast Fourier Transform
-        const bufferLength = analyser.frequencyBinCount; // Nombre de points de données
-        const dataArray = new Uint8Array(bufferLength); // Tableau pour stocker les données
-
-        // Fonction pour analyser le volume en continu
-        function analyserVolume() {
-            analyser.getByteTimeDomainData(dataArray); // Récupère les données temporelles
-
-            // Calculer l'amplitude moyenne
-            let sum = 0;
-            for (let i = 0; i < bufferLength; i++) {
-                const amplitude = (dataArray[i] - 128) / 128; // Normaliser autour de 0
-                sum += amplitude * amplitude; // Ajouter au carré
-            }
-            const rms = Math.sqrt(sum / bufferLength); // Calculer la racine carrée moyenne (RMS)
-            const volume = Math.round(rms * 100); // Convertir en pourcentage et arrondir
-
-            // Appliquer l'arrondi et actualiser moins fréquemment
-            mic_multiplier = Math.round(volume / 5)+1; // Ajuster le multiplicateur
-            multiplier = multiplier_upgrade * mic_multiplier;
-            updateDisplay();
-        }
-
-        // Appeler la fonction à des intervalles spécifiques (exemple : toutes les 500 ms)
-        setInterval(analyserVolume, 500);
-    } catch (err) {
-        console.error("Erreur lors de l'accès au micro : ", err);
+// Événements d'achat des producteurs
+buyOvenButton.addEventListener('click', () => {
+    if (cookies >= ovenPrice) {
+        cookies -= ovenPrice;
+        ovens++;
+        ovenPrice = Math.floor(ovenPrice * 1.5);
+        updateDisplay();
+        moveShop();
     }
-}
+});
 
-// Appeler la fonction
-mesurerHauteurMicro();
+buyFactoryButton.addEventListener('click', () => {
+    if (cookies >= factoryPrice) {
+        cookies -= factoryPrice;
+        factories++;
+        factoryPrice = Math.floor(factoryPrice * 1.5);
+        updateDisplay();
+        moveShop();
+    }
+});
+
+buyCityButton.addEventListener('click', () => {
+    if (cookies >= cityPrice) {
+        cookies -= cityPrice;
+        cities++;
+        cityPrice = Math.floor(cityPrice * 1.5);
+        updateDisplay();
+        moveShop();
+    }
+});
+
+// ============================================================
+// Initialisation
+// ============================================================
 drawWheel();
-
-if (scrollEnabled) {
-    buyScrollButton.style.display = 'none';
-}
-
+mesurerHauteurMicro();
+if (scrollEnabled) buyScrollButton.style.display = 'none';
 updateDisplay();

@@ -12,6 +12,8 @@ body {
 
 .container {
     text-align: center;
+    max-width: 60%;
+    margin: 0 auto;
 }
 
 #cookie {
@@ -25,7 +27,7 @@ body {
     transform: scale(0.95);
 }
 
-#cookie.cookie-button {
+.cookie-button {
     width: 150px;
     height: 150px;
     border-radius: 50%;
@@ -34,28 +36,33 @@ body {
     font-size: 20px;
     font-weight: bold;
     color: white;
-    cursor: pointer;
-    transition: transform 0.1s, background-color 0.3s;
+    margin: 20px auto;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 20px auto;
+    transition: transform 0.1s, background-color 0.3s;
 }
 
-
-#cookie.cookie-button:active {
+.cookie-button:active {
     transform: scale(0.85);
 }
 
 .shop {
     margin-top: 20px;
-    position: absolute; /* Changé de static à absolute */
-    transition: all 0.3s ease; /* Animation douce */
+    position: absolute;
+    transition: all 0.3s ease;
 }
 
-#buyScroll {
-    position: relative;
-    z-index: 1000;
+.shop div {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.shop span {
+    color: white;
+    font-size: 14px;
 }
 
 button {
@@ -77,6 +84,7 @@ button:hover {
     margin: 10px 0;
 }
 
+/* Effet lampe de poche */
 #flashlight {
     position: fixed;
     width: 100%;
@@ -85,10 +93,11 @@ button:hover {
     pointer-events: none;
     z-index: 9999;
     mix-blend-mode: multiply;
-    mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 50px, black 150px);
-    -webkit-mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 50px, black 150px);
+    mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 150px, black 250px);
+    -webkit-mask-image: radial-gradient(circle at var(--x, 50%) var(--y, 50%), transparent 150px, black 250px);
 }
 
+/* Overlay du popup */
 #overlay {
     position: fixed;
     top: 0;
@@ -99,6 +108,7 @@ button:hover {
     z-index: 9999;
 }
 
+/* Popup */
 .popup {
     position: fixed;
     background: #2a2a2a;
@@ -106,9 +116,6 @@ button:hover {
     border-radius: 10px;
     z-index: 10000;
     border: 2px solid #4CAF50;
-}
-
-.popup-content {
     text-align: center;
 }
 
@@ -117,19 +124,22 @@ button:hover {
     padding: 5px 15px;
 }
 
+/* Roue */
 .wheel-container {
     position: fixed;
-    top: 30%;
-    left: 40%;
+    top: 50%;
+    right: 50%;
+    transform: translate(50%, -50%);
     text-align: center;
     z-index: 10000;
 }
 
 #wheel {
-    margin-bottom: 10px;
-    cursor: pointer;
+    transform: scale(1.5);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
 }
 
+/* Bouton de spin */
 #spinWheel {
     background-color: #8B0000;
 }
@@ -138,6 +148,7 @@ button:hover {
     background-color: #A52A2A;
 }
 
+/* Notification de récompense */
 .reward-notification {
     position: fixed;
     top: 50%;
@@ -157,4 +168,94 @@ button:hover {
     15% { opacity: 1; }
     85% { opacity: 1; }
     100% { opacity: 0; }
+}
+
+.producers {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+}
+
+.producer {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid #4CAF50;
+    pointer-events: all;
+    width: 200px;
+}
+
+.producer img {
+    width: 64px;
+    height: 64px;
+    display: block;
+    margin: 0 auto;
+}
+
+.producer-info {
+    text-align: center;
+    margin-top: 10px;
+}
+
+#ovenProducer {
+    top: 10%;
+    left: 10px;
+}
+
+#factoryProducer {
+    top: 40%;
+    left: 10px; /* Changé de right à left */
+}
+
+#cityProducer {
+    bottom: 10%;
+    right: 10px; /* Changé de left à right */
+}
+
+.producer button {
+    width: 100%;
+    margin: 5px 0;
+}
+
+.producer span {
+    display: block;
+    margin-top: 5px;
+    color: #fff;
+}
+
+.shop-item {
+    position: relative; /* Change to fixed when moved */
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 10px;
+    border: 2px solid #4CAF50;
+}
+
+.multiplier-shop, .scroll-shop {
+    position: relative;
+}
+
+.multiplier-shop, .scroll-shop, .wheel-shop {
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.wheel-shop {
+    position: fixed;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    transition: all 0.5s ease-out;
+    z-index: 1000;
+}
+
+.initial-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
 }

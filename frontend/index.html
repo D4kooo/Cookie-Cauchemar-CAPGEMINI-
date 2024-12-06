@@ -1,32 +1,72 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
     <title>Cookie Cauchemar</title>
-    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
     <div id="flashlight"></div>
     <div class="container">
+        <!-- Affichage du score et du multiplicateur -->
         <div id="score">Cookies: <span id="cookieCount">0</span></div>
         <div id="multiplier">Multiplicateur: <span id="multiplierValue">1</span></div>
 
+        <!-- Bouton principal (cookie) -->
         <div class="cookie-container">
             <button id="cookie" class="cookie-button">
-                <img src="assets/images/logo_capgemini.png" alt="Cookie" style="max-height: 200px; max-width: 200px; ">
+                <img src="assets/images/logo_capgemini.png" alt="Cookie" style="max-height: 200px; max-width: 200px;">
             </button>
         </div>
 
-        <div class="shop">
-            <button id="buyMultiplier">Acheter multiplicateur (Prix: <span id="multiplierPrice">10</span>)</button>
-            <button id="buyScroll">Débloquer scroll-click (Prix: <span id="scrollPrice">50</span>)</button>
-            <button id="spinWheel" style="display: Block;">Tourner la roue (500 cookie)</button>
+        <!-- Boutons d'achat initiaux -->
+        <div class="initial-buttons">
+            <div class="shop-item multiplier-shop">
+                <button id="buyMultiplier">Acheter multiplicateur (Prix: <span id="multiplierPrice">10</span>)</button>
+            </div>
+            <div class="shop-item scroll-shop">
+                <button id="buyScroll">Débloquer scroll-click (Prix: <span id="scrollPrice">50</span>)</button>
+            </div>
         </div>
+        
+        <!-- Bouton roue -->
+        <div class="shop-item wheel-shop">
+            <button id="spinWheel">Tourner la roue (500 cookie)</button>
+        </div>
+
+        <!-- Roue de la fortune -->
         <div class="wheel-container">
             <canvas id="wheel" width="300" height="300" style="display: none;"></canvas>
         </div>
     </div>
+
+    <!-- Producteurs -->
+    <div class="producers">
+        <div class="producer" id="ovenProducer">
+            <img src="assets/images/oven.png" alt="Four">
+            <div class="producer-info">
+                <button id="buyOven">Four à cookies (<span id="ovenPrice">50</span>)</button>
+                <span>Possédés: <span id="ovenCount">0</span></span>
+            </div>
+        </div>
+        <div class="producer" id="factoryProducer">
+            <img src="assets/images/factory.png" alt="Usine">
+            <div class="producer-info">
+                <button id="buyFactory">Usine de cookies (<span id="factoryPrice">200</span>)</button>
+                <span>Possédés: <span id="factoryCount">0</span></span>
+            </div>
+        </div>
+        <div class="producer" id="cityProducer">
+            <img src="assets/images/city.png" alt="Ville">
+            <div class="producer-info">
+                <button id="buyCity">Ville de cookies (<span id="cityPrice">1000</span>)</button>
+                <span>Possédés: <span id="cityCount">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay et popup -->
     <div id="overlay" style="display: none;"></div>
     <div id="customPopup" class="popup" style="display: none;">
         <div class="popup-content">
@@ -35,6 +75,7 @@
             <button id="popupNo">Non</button>
         </div>
     </div>
+
     <script src="./js/main.js"></script>
 </body>
 </html>
