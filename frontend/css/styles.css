@@ -297,3 +297,80 @@ button {
     gap: 10px;
     margin-top: 20px;
 }
+
+/* Faux curseur */
+.fake-cursor {
+    position: fixed;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    pointer-events: none;
+    mix-blend-mode: difference;
+    z-index: 10000;
+    transition: transform 0.1s;
+    filter: blur(2px) drop-shadow(0 0 2px rgba(255,255,255,0.8));
+}
+
+.fake-cursor::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 50%;
+    opacity: 0.5;
+    transform: translate(5px, 5px);
+}
+
+/* ...existing code... */
+
+.admin-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #4CAF50;
+    z-index: 10001;
+    color: white;
+}
+
+.admin-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-panel h2 {
+    margin-bottom: 15px;
+    color: #4CAF50;
+}
+
+.admin-panel label {
+    cursor: pointer;
+    user-select: none;
+}
+
+.admin-panel input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+#closeAdmin {
+    margin-top: 15px;
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+}
+
+/* ...existing code... */

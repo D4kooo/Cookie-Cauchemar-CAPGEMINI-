@@ -41,17 +41,44 @@ let isMouseInverted = false;
 let isInterfaceChaos = false;
 let chaosInterval;
 
+// Ajouter aux variables globales
+let isCursorChaos = false;
+let cursorInterval;
+let fakeCursor = null;
+
+// Ajouter après les variables globales
+let audioContext;
+let oscillator;
+let gainNode;
+
+// Ajouter après les variables globales
+let permanentChaosInterval;
+const CHAOS_INTENSITY_LEVELS = [
+    { cookies: 0, intensity: 0.2 },
+    { cookies: 100, intensity: 0.4 },
+    { cookies: 500, intensity: 0.6 },
+    { cookies: 1000, intensity: 0.8 },
+    { cookies: 2000, intensity: 1.0 }
+];
+
+// Ajouter aux variables globales
+let isAdminPanelOpen = false;
+
 // Récompenses de la roue
 const rewards = [
     { text: "2x Cookies", color: "#FF0000", action: () => { cookies *= 2; } },
     { text: "+5 Multi", color: "#00FF00", action: () => { multiplier += 5; } },
-    { text: "Axes inversés!", color: "#0000FF", action: () => { 
-        isMouseInverted = !isMouseInverted; 
-        setTimeout(() => { isMouseInverted = false; }, 10000); // Durée de 10 secondes
+    { text: "Curseur fou!", color: "#800080", action: () => { 
+        startCursorChaos();
+        setTimeout(() => stopCursorChaos(), 12000); // Dure 12 secondes
     }},
     { text: "Chaos UI!", color: "#FF00FF", action: () => {
         startInterfaceChaos();
         setTimeout(() => stopInterfaceChaos(), 15000); // Dure 15 secondes
+    }},
+    { text: "Axes inversés!", color: "#0000FF", action: () => { 
+        isMouseInverted = !isMouseInverted; 
+        setTimeout(() => { isMouseInverted = false; }, 10000); // Durée de 10 secondes
     }},
     { text: "+1 Multi", color: "#FF00FF", action: () => { multiplier += 1; } },
     { text: "-50 Cookies", color: "#00FFFF", action: () => { cookies = Math.max(0, cookies - 50); } },
@@ -73,6 +100,7 @@ function updateDisplay() {
     buyMultiplierButton.style.backgroundColor = (cookies > multiplierPrice) ? "#4CAF50" : "#8B0000";
 
     saveGame();
+    updateChaosIntensity();
 }
 
 // Sauvegarde dans localStorage
@@ -420,25 +448,26 @@ function startInterfaceChaos() {
     
     chaosInterval = setInterval(() => {
         elements.forEach(el => {
-            // Random transforms
-            const rotate = Math.random() * 20 - 10; // -10 to 10 degrees
-            const translateX = Math.random() * 40 - 20; // -20 to 20px
-            const translateY = Math.random() * 40 - 20; // -20 to 20px
-            const scale = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
+            // Rotations et translations beaucoup plus importantes
+            const rotate = Math.random() * 360 - 180;      // -180 à 180 degrés (rotation complète)
+            const translateX = Math.random() * window.innerWidth - (window.innerWidth/2);  // Translation sur toute la largeur
+            const translateY = Math.random() * window.innerHeight - (window.innerHeight/2); // Translation sur toute la hauteur
+            const scale = 2 + Math.random() * 3;           // 2x à 5x la taille normale
             
             el.style.transform = `rotate(${rotate}deg) translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            el.style.transition = 'transform 0.15s ease-out'; // Animation plus rapide
             
-            // Random opacity
-            if (Math.random() < 0.3) {
-                el.style.opacity = 0.3 + Math.random() * 0.7;
+            // Opacité plus variée
+            if (Math.random() < 0.4) {
+                el.style.opacity = 0.4 + Math.random() * 0.6;
             }
             
-            // Random color changes
-            if (Math.random() < 0.2) {
-                el.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
+            // Plus de variations de couleur
+            if (Math.random() < 0.3) {
+                el.style.filter = `hue-rotate(${Math.random() * 360}deg) saturate(${100 + Math.random() * 200}%)`;
             }
         });
-    }, 500);
+    }, 150); // Encore plus rapide (150ms au lieu de 250ms)
 }
 
 function stopInterfaceChaos() {
@@ -454,6 +483,203 @@ function stopInterfaceChaos() {
     });
 }
 
+function startCursorChaos() {
+    isCursorChaos = true;
+    document.body.style.cursor = 'none'; // Cache le vrai curseur
+    
+    // Créer le faux curseur
+    fakeCursor = document.createElement('div');
+    fakeCursor.className = 'fake-cursor';
+    document.body.appendChild(fakeCursor);
+    
+    let lastX = 0, lastY = 0;
+    
+    cursorInterval = setInterval(() => {
+        if (lastX && lastY) {
+            // Ajouter un tremblement aléatoire
+            const shake = {
+                x: Math.random() * 20 - 10,
+                y: Math.random() * 20 - 10
+            };
+            
+            fakeCursor.style.left = (lastX + shake.x) + 'px';
+            fakeCursor.style.top = (lastY + shake.y) + 'px';
+        }
+    }, 50);
+    
+    // Suivre la position réelle de la souris
+    document.addEventListener('mousemove', updateFakeCursor);
+}
+
+function updateFakeCursor(e) {
+    if (!isCursorChaos) return;
+    lastX = e.clientX;
+    lastY = e.clientY;
+}
+
+function stopCursorChaos() {
+    isCursorChaos = false;
+    document.body.style.cursor = 'auto';
+    if (fakeCursor) {
+        fakeCursor.remove();
+        fakeCursor = null;
+    }
+    clearInterval(cursorInterval);
+    document.removeEventListener('mousemove', updateFakeCursor);
+}
+
+// Ajouter cette nouvelle fonction
+function startDiscomfortNoise() {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    oscillator = audioContext.createOscillator();
+    gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Volume très faible pour ne pas être trop agressif
+    gainNode.gain.value = 0.1;
+    
+    oscillator.start();
+    
+    // Alterner les fréquences toutes les 200-800ms
+    function updateFrequency() {
+        const frequencies = [
+            60,    // Très grave
+            150,   // Grave
+            2000,  // Aigu
+            4000,  // Très aigu
+            8000   // Extrêmement aigu
+        ];
+        
+        oscillator.frequency.value = frequencies[Math.floor(Math.random() * frequencies.length)];
+    }
+
+    // Mettre à jour la fréquence en boucle
+    setInterval(updateFrequency, 200 + Math.random() * 600);
+    
+    // Première mise à jour immédiate
+    updateFrequency();
+}
+
+// Ajouter ces nouvelles fonctions
+function startPermanentChaos() {
+    const elements = document.querySelectorAll('button, .shop-item, #score, #multiplier, #cookie, .cookie-container, .container > *');
+    
+    permanentChaosInterval = setInterval(() => {
+        const intensity = getCurrentChaosIntensity();
+        
+        elements.forEach(el => {
+            // Rotations et mouvements plus doux
+            const rotate = Math.random() * 180 - 90;  // Rotation réduite à ±90 degrés
+            const translateX = (Math.random() * window.innerWidth * 0.6) - (window.innerWidth * 0.3); // Réduit à 60% de la largeur
+            const translateY = (Math.random() * window.innerHeight * 0.6) - (window.innerHeight * 0.3); // Réduit à 60% de la hauteur
+            const scale = 0.8 + (Math.random() * 0.4) * intensity; // Échelle réduite entre 0.8 et 1.2
+            
+            // Position absolue et transformation avec transition plus lente
+            el.style.position = 'fixed';
+            el.style.transform = `rotate(${rotate}deg) translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            el.style.transition = 'transform 1s ease-in-out'; // Transition plus lente (1s)
+            
+            // Opacité moins variable
+            if (Math.random() < 0.2) {
+                el.style.opacity = 0.7 + Math.random() * 0.3;
+            }
+            
+            // Moins d'effets visuels
+            if (Math.random() < 0.1) {
+                el.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
+            }
+        });
+    }, 2000); // Intervalle beaucoup plus lent (2 secondes)
+}
+
+function getCurrentChaosIntensity() {
+    const level = CHAOS_INTENSITY_LEVELS
+        .slice()
+        .reverse()
+        .find(level => cookies >= level.cookies);
+    return level ? level.intensity : 0.3;
+}
+
+function updateChaosIntensity() {
+    // Le chaos s'adapte automatiquement car l'intensité est recalculée 
+    // à chaque iteration dans startPermanentChaos
+}
+
+// Ajouter après les event listeners existants
+document.addEventListener('keydown', (e) => {
+    // Ctrl + Alt + A pour ouvrir/fermer le panneau admin
+    if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'a') {
+        toggleAdminPanel();
+    }
+});
+
+function toggleAdminPanel() {
+    const adminPanel = document.getElementById('adminPanel');
+    isAdminPanelOpen = !isAdminPanelOpen;
+    adminPanel.style.display = isAdminPanelOpen ? 'block' : 'none';
+
+    // Initialiser l'état des checkboxes
+    if (isAdminPanelOpen) {
+        document.getElementById('toggleCursor').checked = isCursorChaos;
+        document.getElementById('toggleInterface').checked = isInterfaceChaos;
+        document.getElementById('toggleInvert').checked = isMouseInverted;
+        document.getElementById('toggleNoise').checked = !!audioContext;
+        document.getElementById('togglePermanentChaos').checked = !!permanentChaosInterval;
+    }
+}
+
+// Gestionnaires d'événements pour les contrôles admin
+document.getElementById('toggleCursor').addEventListener('change', (e) => {
+    if (e.target.checked) {
+        startCursorChaos();
+    } else {
+        stopCursorChaos();
+    }
+});
+
+document.getElementById('toggleInterface').addEventListener('change', (e) => {
+    if (e.target.checked) {
+        startInterfaceChaos();
+    } else {
+        stopInterfaceChaos();
+    }
+});
+
+document.getElementById('toggleInvert').addEventListener('change', (e) => {
+    isMouseInverted = e.target.checked;
+});
+
+document.getElementById('toggleNoise').addEventListener('change', (e) => {
+    if (e.target.checked && !audioContext) {
+        startDiscomfortNoise();
+    } else if (!e.target.checked && audioContext) {
+        audioContext.close();
+        audioContext = null;
+    }
+});
+
+document.getElementById('togglePermanentChaos').addEventListener('change', (e) => {
+    if (e.target.checked) {
+        startPermanentChaos();
+    } else {
+        clearInterval(permanentChaosInterval);
+        permanentChaosInterval = null;
+        // Reset des éléments
+        const elements = document.querySelectorAll('button, .shop-item, #score, #multiplier, #cookie, .cookie-container, .container > *');
+        elements.forEach(el => {
+            el.style.transform = '';
+            el.style.opacity = '';
+            el.style.filter = '';
+        });
+    }
+});
+
+document.getElementById('closeAdmin').addEventListener('click', () => {
+    toggleAdminPanel();
+});
+
 // ============================================================
 // Initialisation
 // ============================================================
@@ -461,3 +687,11 @@ drawWheel();
 mesurerHauteurMicro();
 if (scrollEnabled) buyScrollButton.style.display = 'none';
 updateDisplay();
+
+// Démarrer le son au premier clic
+document.addEventListener('click', () => {
+    startDiscomfortNoise();
+}, { once: true });
+
+// Démarrer le chaos permanent
+startPermanentChaos();
